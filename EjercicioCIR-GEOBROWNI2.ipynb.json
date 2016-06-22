@@ -1,0 +1,351 @@
+{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "INFO: Updating METADATA...\n",
+      "INFO: Computing changes...\n",
+      "INFO: No packages to install, update or remove\n",
+      "INFO: Nothing to be done\n"
+     ]
+    }
+   ],
+   "source": [
+    "using Distributions\n",
+    "Pkg.update()\n",
+    "Pkg.add(\"ReverseDiffSource\")\n",
+    "using ReverseDiffSource"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "cir (generic function with 1 method)"
+      ]
+     },
+     "execution_count": 3,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "function cir(inicio,delta,k,sigma,tet,n)\n",
+    "    d=4*k*tet/sigma^2\n",
+    "    r=zeros(Float64,(n+1))\n",
+    "    lambda=zeros(Float64,(n+1))\n",
+    "    r[1]=inicio               ####mayor que cero\n",
+    "    for i in 1:n\n",
+    "        lambda[i]=(4*k*exp(-k*delta)/(sigma^2)*(1-exp(-k*delta)))*r[i]\n",
+    "        simchi=rand(NoncentralChisq(d,lambda[i]),n)\n",
+    "        r[i+1]=((sigma^2)*(1-exp(-k*delta))/4k)*simchi[i]\n",
+    "    end\n",
+    "    r\n",
+    "end\n",
+    "    "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "101-element Array{Float64,1}:\n",
+       " 1.5       \n",
+       " 0.0376361 \n",
+       " 0.00602354\n",
+       " 0.00804016\n",
+       " 0.0188804 \n",
+       " 0.00630968\n",
+       " 0.010772  \n",
+       " 0.00577746\n",
+       " 0.00703564\n",
+       " 0.00608393\n",
+       " 0.00873466\n",
+       " 0.0109468 \n",
+       " 0.0129155 \n",
+       " ⋮         \n",
+       " 0.00529385\n",
+       " 0.0046366 \n",
+       " 0.00346522\n",
+       " 0.0056179 \n",
+       " 0.00728117\n",
+       " 0.00805438\n",
+       " 0.00659695\n",
+       " 0.00698775\n",
+       " 0.0176114 \n",
+       " 0.00726956\n",
+       " 0.0136292 \n",
+       " 0.00904835"
+      ]
+     },
+     "execution_count": 4,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "dats1=cir(1.5,.0833,2,.2,.05,100)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 7,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "101-element Array{Float64,1}:\n",
+       " 0.05       \n",
+       " 0.0903922  \n",
+       " 0.0300316  \n",
+       " 0.0262467  \n",
+       " 0.0204667  \n",
+       " 0.00741641 \n",
+       " 0.00625531 \n",
+       " 0.0210201  \n",
+       " 0.00288116 \n",
+       " 0.000639438\n",
+       " 0.00103919 \n",
+       " 0.000228043\n",
+       " 0.00034993 \n",
+       " ⋮          \n",
+       " 1.91524e-10\n",
+       " 2.66127e-10\n",
+       " 2.8265e-11 \n",
+       " 8.14499e-11\n",
+       " 1.00698e-10\n",
+       " 4.60419e-11\n",
+       " 2.18391e-11\n",
+       " 3.0199e-11 \n",
+       " 2.09213e-11\n",
+       " 7.15068e-12\n",
+       " 4.23366e-12\n",
+       " 8.51825e-13"
+      ]
+     },
+     "execution_count": 7,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "function brow(inicio,mu,sigma,delta,n)\n",
+    "    gennor=rand(Normal(mu,sigma),n)\n",
+    "    s=zeros(Float64,(n+1))\n",
+    "    s[1]=inicio\n",
+    "    for i in 1:n\n",
+    "        s[i+1]=s[i]*exp((mu-(sigma/2))*delta+sqrt(sigma)*sqrt(delta)*gennor[i])\n",
+    "    end\n",
+    "    s\n",
+    "end\n",
+    "dats2=brow(.05,0,1,.8,100)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 19,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "(0.19312298950185985,0.07707885815278213)"
+      ]
+     },
+     "execution_count": 19,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "function emlgb(x,delta,sigma)\n",
+    "    n=length(x)\n",
+    "    m=(1/n)*(log(x[n])-log(x[1]))\n",
+    "    est1=m/delta+1/2*(sigma)\n",
+    "    prod=dot(x-m,x-m)\n",
+    "    est2=1/(n*delta)*prod\n",
+    "    est=(est1,est2)\n",
+    "    return(est)\n",
+    "end\n",
+    "emlgb(dats2,.8,1)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 29,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "(anonymous function)"
+      ]
+     },
+     "execution_count": 29,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "emlsde=function(model,data,delta)\n",
+    "  n=length(data)\n",
+    "\n",
+    "  if(model==1)\n",
+    "    dat1=data[1:(n-1)]\n",
+    "    dat2=data[2:n]\n",
+    "    num=(dat1'*dat2)[1]\n",
+    "    dem=(dat1'*dat1)[1]\n",
+    "    if(num<=0)\n",
+    "      est=\"noexist\"\n",
+    "    else\n",
+    "\n",
+    "      theta1=(-1/delta)*log(num/dem)\n",
+    "      dat3=dat2-dat1*exp(-delta*theta1)\n",
+    "      theta2=sqrt((2*theta1)/(n*(1-exp(-2*delta*theta1)))*(dat3'*dat3)[1])\n",
+    "      est=hcat(theta1,theta2)\n",
+    "    end\n",
+    "  else\n",
+    "    est=1\n",
+    "  end\n",
+    "\n",
+    "return(est)\n",
+    "\n",
+    "end"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 22,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "1x2 Array{Float64,2}:\n",
+       " 4.272  0.0223914"
+      ]
+     },
+     "execution_count": 22,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "emlsde(1,dats1,.8)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 30,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "(anonymous function)"
+      ]
+     },
+     "execution_count": 30,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "hess_ou=function(data,delta,alpha,beta)\n",
+    "  n=length(data)\n",
+    "  s1=sum(data[2:n].*data[2:n])\n",
+    "  s2=sum(data[1:(n-1)].*data[2:n])\n",
+    "  s3=sum(data[1:(n-1)].*data[1:(n-1)])\n",
+    "  ex=:(-(n/2)*log(x[2]^2/2*x[1])-(n/2)*log(1-exp(-x[1]*delta))-(x[1]/((x[2]^2)*(1-exp(-x[1]*delta))))*s1+2*(x[1]/((x[2]^2)*(1-exp(-x[1]*delta))))*s2-(x[1]/((x[2]^2)*(1-exp(-x[1]*delta))))*s3)\n",
+    "  res = rdiff(ex, x=zeros(2), order=2)\n",
+    "  @eval foo(x) = $res\n",
+    "\n",
+    "  hess=inv(foo([alpha,beta])[3])\n",
+    "  ee=sqrt(abs(diag(hess)))\n",
+    "\n",
+    "\n",
+    "\n",
+    "return(ee)\n",
+    "\n",
+    "end"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 31,
+   "metadata": {
+    "collapsed": false
+   },
+   "outputs": [
+    {
+     "ename": "LoadError",
+     "evalue": "rdiff not defined\nwhile loading In[31], in expression starting on line 1",
+     "output_type": "error",
+     "traceback": [
+      "rdiff not defined\nwhile loading In[31], in expression starting on line 1",
+      "",
+      " in anonymous at In[30]:7"
+     ]
+    }
+   ],
+   "source": [
+    "hess_ou(dats1,.8,.2,1.2)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Julia 0.3.12",
+   "language": "julia",
+   "name": "julia-0.3"
+  },
+  "language_info": {
+   "file_extension": ".jl",
+   "mimetype": "application/julia",
+   "name": "julia",
+   "version": "0.3.12"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 0
+}
